@@ -1,184 +1,191 @@
-# Brazilian ALPR System
+<!-- Canonical repository: https://github.com/sidnei-almeida/brazilian-alpr-system -->
+<p align="center">
+  <img src="images/header.png" alt="Brazilian ALPR — character-level YOLO research" width="640" />
+</p>
 
-End-to-end **Automatic License Plate Recognition (ALPR)** research stack aimed at Brazilian plates under challenging conditions: low resolution, sensor noise, uneven lighting, and perspective variation. This repository bundles a **Roboflow-sourced character-level dataset** (digits and letters in YOLO format), a **Colab-oriented analysis and training notebook**, and **exported YOLOv8 training artifacts** including weights and diagnostic plots.
+<h1 align="center">brazilian-alpr-system</h1>
+
+<p align="center">
+  <strong>YOLOv8 research stack for <em>plate character</em> detection (digits and letters)—the OCR-style stage of ALPR—not full license-plate bounding-box detection.</strong>
+</p>
+
+<p align="center">
+  <a href="https://www.python.org/" title="Python"><img src="https://cdn.simpleicons.org/python/3776AB" alt="Python" width="56" height="56" /></a>
+  &nbsp;&nbsp;&nbsp;
+  <a href="https://pytorch.org/" title="PyTorch"><img src="https://cdn.simpleicons.org/pytorch/EE4C2C" alt="PyTorch" width="56" height="56" /></a>
+  &nbsp;&nbsp;&nbsp;
+  <a href="https://jupyter.org/" title="Jupyter"><img src="https://cdn.simpleicons.org/jupyter/F37626" alt="Jupyter" width="56" height="56" /></a>
+  &nbsp;&nbsp;&nbsp;
+  <a href="https://www.ultralytics.com/" title="Ultralytics YOLO"><img src="https://cdn.simpleicons.org/yolo/111F68" alt="YOLO" width="56" height="56" /></a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/YOLOv8-nano-111F68?style=flat-square&logo=yolo&logoColor=white" alt="YOLOv8n" />
+  <img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.10+" />
+  <img src="https://img.shields.io/badge/classes-36-EE4C2C?style=flat-square&logo=pytorch&logoColor=white" alt="36 classes" />
+  <img src="https://img.shields.io/badge/dataset-Roboflow-6700EE?style=flat-square&logo=roboflow&logoColor=white" alt="Roboflow" />
+</p>
+
+<p align="center">
+  <a href="#scope-what-this-repo-is-not">Scope</a> ·
+  <a href="#overview">Overview</a> ·
+  <a href="#gallery">Gallery</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#dataset">Dataset</a> ·
+  <a href="#training--artifacts">Training</a> ·
+  <a href="#results">Results</a> ·
+  <a href="#reproducing-the-workflow">Reproduce</a> ·
+  <a href="#project-layout">Layout</a> ·
+  <a href="#limitations">Limitations</a> ·
+  <a href="#author">Author</a>
+</p>
 
 ---
 
-## Table of contents
+## Scope: what this repo is **not**
 
-- [Overview](#overview)
-- [Repository layout](#repository-layout)
-- [Dataset](#dataset)
-- [Notebook: analysis and training](#notebook-analysis-and-training)
-- [Model training](#model-training)
-- [Results](#results)
-- [Reproducing the pipeline](#reproducing-the-pipeline)
-- [Limitations and next steps](#limitations-and-next-steps)
+| This repository | Separate project (not here) |
+|-----------------|----------------------------|
+| **Character-level** object detection: each bounding box is a **single digit or letter**(`0–9`, `A–Z`) on or near a plate crop. | **Plate localization**: finding the rectangular **plate region** in a full vehicle image. |
+| Builds the **reading / OCR-style** slice of an ALPR pipeline (after you have crops or tight scenes). | End-to-end “find plate then read” unless you **compose** this model with a plate detector elsewhere. |
+
+> If you need **only** “where is the plate in the frame?”, use your **plate-detection repository** and treat this repo as the **character recognition** companion.
 
 ---
 
 ## Overview
 
-| Component | Description |
-| -------- | ----------- |
-| **Detection target** | 36 classes: `0–9` and `A–Z` (per-character boxes, suitable for building plate strings after post-processing). |
-| **Detector** | YOLOv8 **nano** (`yolov8n.pt`) via [Ultralytics](https://github.com/ultralytics/ultralytics). |
-| **Notebook** | `Dataset_analysis_and_YOLO_Training.ipynb` — dataset inspection, class distribution, Albumentations augmentation, stratified split, training, packaging. |
-| **Artifacts** | `license_plate_detection3/` — curves, confusion matrices, batch visualizations, `weights/best.pt`, `results.csv`, `args.yaml`. |
+**brazilian-alpr-system** documents a full research pass from a **Roboflow** YOLO export to **Ultralytics YOLOv8n** training aimed at **Brazilian-style plate text** under noise, blur, and perspective. The detector outputs **36 classes** (alphanumeric symbols), suitable for **string assembly** (sorting boxes, Mercosul vs legacy rules) in a larger system.
 
-The high-level goal is a modular ALPR path: **localize characters** (this model) and, in a full system, combine with **plate detection**, **ordering**, and **Brazilian plate-format rules** (Mercosul vs legacy).
+| Layer | Detail |
+|-------|--------|
+| **Detector** | YOLOv8 **nano** (`yolov8n.pt`), `task=detect`. |
+| **Notebook** | `Dataset_analysis_and_YOLO_Training.ipynb` — Colab-oriented EDA, Albumentations, stratified split, training, packaging. |
+| **Run snapshot** | `license_plate_detection3/` — `weights/best.pt`, `results.csv`, `args.yaml`, curves, confusion matrices, batch visualizations. |
 
 ---
 
-## Repository layout
+## Gallery
 
-```
-brazilian-alpr-system/
-├── Dataset_analysis_and_YOLO_Training.ipynb   # Main Colab workflow
-├── dataset/
-│   ├── data.yaml                              # Class names & path hints (see note below)
-│   ├── README.roboflow.txt                    # Roboflow export metadata
-│   └── train/                                 # images/ + labels/ (YOLO .txt)
-├── license_plate_detection3/                  # Training run outputs
-│   ├── weights/best.pt
-│   ├── results.csv, args.yaml, results.png
-│   ├── confusion_matrix*.png, Box*.png
-│   └── train_batch*.jpg, val_batch*_*.jpg, labels.jpg
-└── README.md
-```
+<p align="center">
+  <img src="images/software.png" alt="Training pipeline: dataset, YOLOv8 character detection, metrics and checkpoints" width="920" />
+</p>
 
-> **Path note:** `dataset/data.yaml` lists `train`, `val`, and `test` paths relative to a parent layout (`../train/images`, etc.). The copy in this repo currently includes the **`dataset/train/`** tree as exported; when you run the notebook, it builds `train` / `valid` / `test` folders and a Colab-local `data.yaml` aligned with YOLO training.
+<p align="center">
+  <em><strong>Figure 1.</strong> Research workflow: annotated character boxes → YOLOv8 training → validation plots and <code>best.pt</code> (character stage only).</em>
+</p>
+
+---
+
+## Features
+
+| Area | Description |
+|------|-------------|
+| **Character detection** | 36 YOLO classes matching **plate symbols**, not a single “plate” class. |
+| **Reproducible notebook** | Download → inspect labels → augment → split → train → export artifacts. |
+| **Metrics & diagnostics** | PR / P / R curves, normalized confusion matrix, train/val batch mosaics. |
+| **Documented hyperparameters** | `args.yaml` mirrors the Colab run (`epochs`, `patience`, `imgsz`, batch, AMP, etc.). |
 
 ---
 
 ## Dataset
 
-- **Source:** Exported from [Roboflow](https://roboflow.com) (see `dataset/README.roboflow.txt`).
-- **Size:** **86** source images (per Roboflow README); labels are **YOLOv8** normalized boxes (`class cx cy w h`).
-- **Classes:** `nc: 36` — alphanumeric set `0–9`, `A–Z` as defined in `dataset/data.yaml`.
-- **Content:** Crops or scenes where **individual plate characters** are annotated (not a single “full plate” class), which matches a **character detector** stage in ALPR.
+- **Origin:** [Roboflow](https://roboflow.com) export (see `dataset/README.roboflow.txt`).
+- **Format:** YOLOv8-style labels (`class cx cy w h`, normalized).
+- **Classes:** `nc: 36`, names `0–9` and `A–Z` in `dataset/data.yaml`.
+- **Scale:** On the order of **~86** source images in the documented export—intentionally **research-scale**; expect **class imbalance**.
+
+> **`data.yaml` paths** point at `../train/images`, `../valid/images`, etc. The repo ships `dataset/train/` as exported; the notebook reshuffles into `train` / `valid` / `test` and should regenerate a Colab-local YAML aligned with those folders.
 
 ---
 
-## Notebook: analysis and training
+## Training & artifacts
 
-The notebook `Dataset_analysis_and_YOLO_Training.ipynb` is authored for **Google Colab** (GPU metadata: **T4**). It performs the following stages in order:
-
-1. **Archive ingestion**  
-   Unzips the Roboflow export (e.g. `license plate.yolov8.zip`) into a `train/images` and `train/labels` layout.
-
-2. **Qualitative inspection**  
-   Loads `data.yaml`, samples images, and displays them with **IPython** thumbnails while printing decoded label lines with **human-readable class names** from `names`.
-
-3. **Exploratory analysis**  
-   Aggregates YOLO labels across the corpus, builds a **per-class count** table with **pandas**, and visualizes the distribution with **matplotlib** / **seaborn** (bar plots for imbalance diagnostics).
-
-4. **Augmentation (Albumentations)**  
-   Installs `albumentations` and applies a **bbox-aware** pipeline on each image that has a matching label file:
-   - `RandomBrightnessContrast` (p=0.5)
-   - `HorizontalFlip` (p=0.5)
-   - `Rotate` within ±15° (p=0.5)
-   - `Blur` with `blur_limit=3` (p=0.3)  
-   Originals are copied to `train_augmented/` plus **two stochastic variants** per image (`num_variants=2`), yielding on the order of **258** files in the augmented folder in the logged run (86 originals + 172 augmentations).
-
-5. **Train / validation / test split**  
-   Uses `sklearn.model_selection.train_test_split` with `random_state=42`:
-   - **20%** held out as **test**
-   - Remaining **80%** split again (**25%** of that slice → **validation**, i.e. **20%** of all images)  
-   Effective ratio ≈ **60% / 20% / 20%** for train / val / test.
-
-6. **Ultralytics training**  
-   Installs `ultralytics`, loads `YOLO('yolov8n.pt')`, and calls `model.train(...)` with image size **640**, long schedule (**300** epochs), early stopping patience **15**, checkpointing every **10** epochs, and project directory under `/content/yolov8_training_results` (Colab). The run recorded in this repo’s `args.yaml` shows the saved run name **`license_plate_detection3`** (Ultralytics may increment names when folders exist).
-
-7. **Artifact export**  
-   Optional zipping of the results folder for download from Colab.
-
-Together, these steps document a **repeatable experiment** from raw export to evaluated detector, with emphasis on **data understanding** before training.
-
----
-
-## Model training
-
-Key hyperparameters and settings (from the notebook and `license_plate_detection3/args.yaml`):
+Key settings from `license_plate_detection3/args.yaml` and the notebook:
 
 | Setting | Value |
-| ------- | ----- |
+|---------|--------|
 | Model | `yolov8n.pt` |
-| Task | `detect` |
-| Epochs (max) | 300 |
+| Max epochs | 300 |
+| Early stop patience | 15 |
 | Image size | 640 |
-| Batch size | 16 |
-| Early stopping patience | 15 |
-| Save period | every 10 epochs |
-| AMP | enabled |
-| Augmentation (Ultralytics defaults) | e.g. mosaic, HSV, translate, scale, fliplr, `auto_augment=randaugment`, `erasing=0.4`, etc. (see `args.yaml`) |
+| Batch | 16 |
+| AMP | on |
+| Best checkpoint | **Epoch 187** (`best.pt`; run stopped early around epoch 202) |
 
-**Training outcome (logged run):** optimization **stopped early** after **202** completed epochs; the **best checkpoint** was retained at **epoch 187** (`best.pt`), per the notebook training log.
+Weights: **`license_plate_detection3/weights/best.pt`**.
 
 ---
 
 ## Results
 
-### Metrics at best epoch (epoch 187, from `results.csv`)
+Metrics at the **best** epoch (from `results.csv`, epoch **187**):
 
 | Metric | Value |
-| ------ | ----- |
-| Precision (Box) | 0.884 |
-| Recall (Box) | 0.857 |
-| mAP@0.5 | 0.932 |
-| mAP@0.5:0.95 | 0.690 |
+|--------|--------|
+| Box **P** | 0.884 |
+| Box **R** | 0.857 |
+| **mAP@0.5** | 0.932 |
+| **mAP@0.5:0.95** | 0.690 |
 
-> Values are read from the `metrics/*` columns on the row with `epoch=187` in `license_plate_detection3/results.csv`. Slight differences can occur if you retrain with another seed or data layout.
-
-### Training curves
-
-![Training and validation metrics](license_plate_detection3/results.png)
-
-### Precision–recall and diagnostic curves
-
-| PR curve | Precision curve | Recall curve |
-| :------: | :-------------: | :----------: |
-| ![PR curve](license_plate_detection3/BoxPR_curve.png) | ![Precision curve](license_plate_detection3/BoxP_curve.png) | ![Recall curve](license_plate_detection3/BoxR_curve.png) |
-
-### Confusion matrix (normalized)
-
-![Normalized confusion matrix](license_plate_detection3/confusion_matrix_normalized.png)
-
-### Batch visualizations
-
-| Training batch (mosaic) | Validation predictions |
-| :---------------------: | :--------------------: |
-| ![Train batch 0](license_plate_detection3/train_batch0.jpg) | ![Val batch 0 predictions](license_plate_detection3/val_batch0_pred.jpg) |
-
-| Validation labels (ground truth) | Label statistics |
-| :------------------------------: | :--------------: |
-| ![Val batch 0 labels](license_plate_detection3/val_batch0_labels.jpg) | ![Labels overview](license_plate_detection3/labels.jpg) |
-
-Weights for the best run: `license_plate_detection3/weights/best.pt`.
+Curves and matrices live under `license_plate_detection3/` (e.g. `results.png`, `BoxPR_curve.png`, `confusion_matrix_normalized.png`, `train_batch*.jpg`, `val_batch*_*.jpg`).
 
 ---
 
-## Reproducing the pipeline
+## Reproducing the workflow
 
-1. **Environment:** Open `Dataset_analysis_and_YOLO_Training.ipynb` in **Google Colab** (GPU recommended) or a local Jupyter environment with CUDA if available.
-2. **Dependencies:** The notebook installs `ultralytics`, `albumentations`, and uses `pandas`, `matplotlib`, `seaborn`, `opencv-python`, `scikit-learn`, and `PyYAML` as needed.
-3. **Data:** Upload your Roboflow **YOLOv8** zip or point paths to this repo’s `dataset/train` structure; adjust `data.yaml` paths so `train`, `val`, and `test` match the folders created by the split step.
-4. **Train:** Execute cells in order; training writes under the Colab project path unless you change `project=` / `name=` in `model.train(...)`.
-5. **Evaluate:** Use `results.csv`, generated plots, and `yolo val` / Python API on `best.pt` for fresh metrics.
+1. Open **`Dataset_analysis_and_YOLO_Training.ipynb`** in **Colab** (GPU recommended) or local Jupyter with CUDA.
+2. Install stack from the notebook (`ultralytics`, `albumentations`, `pandas`, visualization libs, etc.).
+3. Ingest your Roboflow **YOLOv8** zip or align paths with this repo’s `dataset/`.
+4. Run cells in order: unzip → EDA → augment → **train / val / test** split → `YOLO('yolov8n').train(...)`.
+5. Evaluate with exported `results.csv`, plots, or `yolo val model=.../best.pt`.
 
 ---
 
-## Limitations and next steps
+## Project layout
 
-- **Scale:** ~86 source images is modest for 36 classes; performance may not generalize to all Brazilian road conditions without more data and domain diversity.
-- **Task scope:** This detector targets **characters**, not full plates; a production ALPR stack still needs **plate localization**, **reading order**, and **format validation** (e.g. Mercosul vs older patterns).
-- **Metadata mismatch:** Roboflow YAML may reference a workspace name that does not reflect the ALPR domain; rely on label semantics (`0–9`, `A–Z`) rather than workspace titles.
-- **Suggested extensions:** plate-level detector + OCR fusion, hard-negative mining, night / rain subsets, and deployment export (TensorRT, ONNX) for edge devices.
+```
+brazilian-alpr-system/
+├── images/
+│   ├── header.png
+│   └── software.png
+├── Dataset_analysis_and_YOLO_Training.ipynb
+├── dataset/
+│   ├── data.yaml
+│   ├── README.roboflow.txt
+│   └── train/                    # images/ + labels/ (as exported)
+└── license_plate_detection3/      # one training run
+    ├── weights/best.pt
+    ├── args.yaml
+    ├── results.csv
+    └── *.png, *.jpg              # plots & batch visualizations
+```
+
+---
+
+## Limitations
+
+- **Data volume** is modest for **36** classes; generalization to all Brazilian scenes is **not** guaranteed without more diverse captures.
+- **Workspace metadata** in `data.yaml` may show unrelated Roboflow project names—**trust the label semantics** (`0–9`, `A–Z`), not the workspace title.
+- **Production ALPR** still needs your **plate detector**, **reading order**, and **plate-format validation** (Mercosul vs legacy)—this repo covers **character boxes only**.
 
 ---
 
 ## License and third-party data
 
-Dataset licensing and redistribution terms are governed by your **Roboflow** project settings (see `dataset/README.roboflow.txt` and your Roboflow dashboard). Ultralytics YOLO models follow their respective licenses; consult the [Ultralytics documentation](https://docs.ultralytics.com) for commercial use.
+Dataset terms follow your **Roboflow** project license (`dataset/README.roboflow.txt`). **Ultralytics** / **YOLO** usage is subject to their licenses. Cite **Roboflow** and **Ultralytics** in academic or commercial derivatives as appropriate.
 
-If you use this repository in academic or technical work, please cite or acknowledge the **Roboflow** dataset export and the **Ultralytics YOLOv8** framework as appropriate.
+---
+
+## Author
+
+| | |
+| --- | --- |
+| **Maintainer** | [Sidnei Almeida](https://github.com/sidnei-almeida) |
+| **Repository** | [github.com/sidnei-almeida/brazilian-alpr-system](https://github.com/sidnei-almeida/brazilian-alpr-system) |
+
+---
+
+<p align="center">
+  <sub>For <strong>end-to-end</strong> ALPR, pair this character detector with a dedicated <strong>plate localization</strong> model from your other repository.</sub>
+</p>
